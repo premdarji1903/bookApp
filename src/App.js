@@ -1,23 +1,54 @@
-import logo from './logo.svg';
 import './App.css';
-
+import { useEffect, useState } from 'react';
+import BookCreate from './Components/BookCreate';
+import BookList from './Components/BookList';
+import axios from 'axios'
 function App() {
+  const [books, setBooks] = useState([]);
+  const fetchData = async () => {
+    const response = await axios.get(`https://nestjs-server-ord0.onrender.com/book/all`)
+    setBooks(response.data)
+  }
+  useEffect(() => {
+    fetchData();
+  }, [])
+  const createBook = async (title) => {
+    const response = await axios.post(`https://nestjs-server-ord0.onrender.com/book/create`, {
+      title
+    })
+    const updatedBooks = [
+      ...books,
+      response.data
+    ]
+    setBooks(updatedBooks);
+  }
+
+  const deleteBookById = async (id) => {
+    if (window.confirm("Are you sure you want to delete this book title ..?")) {
+      console.log(`hello`);
+      await axios.delete(`https://nestjs-server-ord0.onrender.com/book/delete/${id}`)
+      const filteredBooks = books.filter((book) => book._id !== id)
+      setBooks(filteredBooks);
+    }
+
+  }
+  const editBookById = async (id, newTitle) => {
+    const response = await axios.patch(`https://nestjs-server-ord0.onrender.com/book/update/${id}`, {
+      title: newTitle
+    })
+    const newBooks = books.map((book) => {
+      if (book._id === id) {
+        return { ...book, ...response.data }
+      }
+      return book
+    })
+    setBooks(newBooks)
+  }
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <BookList booksData={books} onDelete={deleteBookById} onEdit={editBookById} />
+      <BookCreate onCreate={createBook} />
     </div>
   );
 }
